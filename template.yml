@@ -1,0 +1,36 @@
+Transform: AWS::Serverless-2016-10-31
+Description: Creating middleware for aws-lambda go
+
+Globals:
+    Function:
+       Runtime: go1.x
+       Timeout: 1
+
+Resources:
+    TimeoutLambda:
+        Type: AWS::Serverless::Function
+        Properties:
+            CodeUri: functions/timeout
+            Handler: main
+            Environment:
+                Variables:
+                    PARAMETER_NAME: !Ref SSMParameter
+            Policies:
+                - SSMParameterReadPolicy:
+                      ParameterName: !Ref SSMParameter
+            Events:
+                InvocationEvent:
+                    Type: Api
+                    Properties:
+                        Path: /timeout
+                        Method: POST
+            
+    
+    SSMParameter:
+        Type: AWS::SSM::Parameter
+        Properties:
+            Name: parametername
+            Type: String
+            Value: examplekey
+            Description: sample ssm parameter
+                
