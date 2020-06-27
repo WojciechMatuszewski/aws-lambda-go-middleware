@@ -5,19 +5,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"lambda-middleware/internal/logger"
 	"lambda-middleware/internal/parameter"
 	"lambda-middleware/pkg/middleware"
 
+	"github.com/aws/aws-lambda-go/lambda"
+
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 
 	"github.com/aws/aws-sdk-go-v2/aws/external"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
 )
 
 type Payload struct {
@@ -57,9 +57,9 @@ func main() {
 	ssmAPI := ssm.New(cfg)
 	paramService := parameter.NewService(ssmAPI)
 
-	root := lambda.NewHandler(handler)
-	withTimeout := middleware.WithTimeoutLogger(root)
-	h := middleware.WithSSMParameter(paramService, os.Getenv("PARAMETER_NAME"), "ssmparam")(withTimeout)
+	h := middleware.Wrap(handler).Use(
+		middleware.WithTimeoutLogger()).Use(
+		middleware.WithSSMParameter(paramService, "parametername", "ssmparam"))
 
 	lambda.StartHandler(h)
 }

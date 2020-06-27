@@ -5,17 +5,16 @@ import (
 	"time"
 
 	"lambda-middleware/internal/logger"
-
-	"github.com/aws/aws-lambda-go/lambda"
 )
 
-func WithTimeoutLogger(next lambda.Handler) lambda.Handler {
-	return middlewareFunc(func(ctx context.Context, payload []byte) ([]byte, error) {
+func WithTimeoutLogger() middlewareFunc {
+	return func(ctx context.Context, payload []byte) (context.Context, []byte, error) {
 		go func() {
 			deadline, ok := ctx.Deadline()
 			if !ok {
-				panic("not ok")
+				panic("deadline not found")
 			}
+
 			deadline = deadline.Add(-50 * time.Millisecond)
 			timeoutChan := time.After(time.Until(deadline))
 
@@ -27,6 +26,6 @@ func WithTimeoutLogger(next lambda.Handler) lambda.Handler {
 			}
 		}()
 
-		return next.Invoke(ctx, payload)
-	})
+		return ctx, payload, nil
+	}
 }
